@@ -1,30 +1,32 @@
 # Which One Do I Reach For?
 
-An interactive explainer for **Python lists vs. dictionaries vs. tuples** — plus loops,
-functions, NumPy and pandas — built around real day-to-day analytical/financial work.
+An interactive explainer for **Python lists vs. dictionaries vs. tuples**, built around real
+day-to-day analytical work.
 
 Inspired by the animated, "watch-it-happen" style of
 [tidyexplain](https://www.garrickadenbuie.com/project/tidyexplain/), reframed for the
-*decision* a learner actually faces: **which container or construct do I reach for, and why?**
+*decision* a learner actually faces: **which container do I reach for, and why?**
 
 Built from the Stringfest Analytics handout *"Python 1: Which One Do I Reach For?"*
 
 ## What's inside
 
-- **"What do you catch yourself thinking?"** — click the thought that sounds like you and get
-  the recommended structure, the reasoning, and a financial code snippet.
-- **The big three, animated** — same ticker/price data in three containers:
-  - **List** — append, sort (cells physically slide into place), pop, grab-by-index.
-  - **Dictionary** — look up a ticker by name and watch the key→value pair light up
-    (and a `KeyError` when it's missing). JSON is just a dictionary.
-  - **Tuple** — try to change it and get a `TypeError` + lock; unpack it into named variables.
-- **"Ask yourself" flip cards** — for vs. while, comprehension vs. loop, lambda vs. def,
-  plain Python vs. NumPy vs. pandas.
-- **Decisions at a glance** — the whole cheat sheet, clickable.
+One small watchlist, held three different ways:
+
+- **"What do you catch yourself thinking?"** Click the thought that sounds like you and get the
+  recommended container, the reasoning, and a code snippet.
+- **The big three, animated:**
+  - **List** (`['NVDA', 'AAPL', 'MSFT', 'AMZN', 'TSLA']`): add a ticker, sort A to Z (the cells
+    physically slide into their new positions), remove the last item, grab one by position.
+  - **Dictionary** (`{'AAPL': 225, ...}`): click any ticker to look up its price and watch the
+    key-to-value pair light up. Click the missing key to see a `KeyError`. JSON is just a dictionary.
+  - **Tuple** (`('USD', 'EUR', 0.92)`): try to change it and get a `TypeError` plus a lock; unpack it
+    into named values.
+- **Decisions at a glance:** the cheat sheet, clickable.
 
 ## Running it
 
-It's a static site — no build step, no dependencies.
+It's a static site. No build step, no dependencies.
 
 ```bash
 # from the project root
@@ -36,7 +38,7 @@ Or just open `index.html` directly in a browser.
 
 ### Deploying to GitHub Pages
 
-Push to `main` and enable Pages (Settings → Pages → deploy from branch, root). The site is
+Push to `main` and enable Pages (Settings, then Pages, deploy from branch, root). The site is
 served as-is.
 
 ## Files
@@ -45,10 +47,10 @@ served as-is.
 |------|---------|
 | `index.html` | Page structure and content |
 | `css/styles.css` | Stringfest-branded styling (red `#CF3338` + off-white `#EEECE1`) |
-| `js/data.js` | All teaching content (decision chips, flip cards) |
+| `js/data.js` | Sample watchlist data and decision-engine content |
 | `js/app.js` | Interactions and animations (vanilla JS, no dependencies) |
 | `assets/` | Stringfest logo (dark + white variants) |
 
 ---
 
-*Stringfest Analytics — helping Excel users move from fragile spreadsheets to confident, scalable analysis.*
+*Stringfest Analytics: helping Excel users move from fragile spreadsheets to confident, scalable analysis.*

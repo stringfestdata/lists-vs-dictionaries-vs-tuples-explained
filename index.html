@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Which One Do I Reach For? &middot; Lists vs Dictionaries vs Tuples</title>
-  <meta name="description" content="An interactive guide to choosing between Python lists, dictionaries, and tuples (plus loops, functions, NumPy and pandas) in real day-to-day financial work. By Stringfest Analytics." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <title>Lists vs Dictionaries vs Tuples &middot; Which One Do I Reach For?</title>
+  <meta name="description" content="An interactive guide to choosing between Python lists, dictionaries, and tuples in real day-to-day analytical work. By Stringfest Analytics." />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -16,12 +15,12 @@
   <header class="hero">
     <div class="wrap">
       <img class="brand-logo" src="assets/stringfest-logo-dark.png" width="1407" height="193" alt="Stringfest Analytics" />
-      <p class="eyebrow">Python 1 &middot; Which one do I reach for?</p>
+      <p class="eyebrow">Which one do I reach for?</p>
       <h1>Lists <span class="vs">vs</span> Dictionaries <span class="vs">vs</span> Tuples<span class="dot">.</span></h1>
       <p class="lede">
-        Deciding between lists, dictionaries, tuples &mdash; and loops, functions, NumPy and pandas &mdash;
-        in real day-to-day analytical work. Stop memorizing syntax. Start asking the one question
-        that picks the right tool every time.
+        Python&rsquo;s three everyday containers, side by side. Stop memorizing syntax. Start asking the
+        one question that picks the right one every time. The structure you want is usually hiding in
+        the way you describe the problem to yourself.
       </p>
       <a class="cta" href="#decider">Help me choose &rarr;</a>
     </div>
@@ -34,8 +33,7 @@
         <p class="kicker">Start here</p>
         <h2>What do you catch yourself thinking?</h2>
         <p class="section-lede">
-          Pick the thought that sounds most like you. The structure you want is usually hiding in the
-          way you describe the problem to yourself.
+          Pick the thought that sounds most like you, and see which container fits.
         </p>
 
         <div class="decider-grid" id="thoughtGrid" role="list">
@@ -58,10 +56,10 @@
     <section id="bigthree" class="section section-alt">
       <div class="wrap">
         <p class="kicker">The big three, side by side</p>
-        <h2>Watch how each one actually behaves</h2>
+        <h2>Watch how each one behaves</h2>
         <p class="section-lede">
-          Same financial data, three containers. Press the buttons and watch what each structure
-          lets you do &mdash; and what it refuses to do.
+          The same little watchlist, held three different ways. Press the buttons and watch what each
+          structure lets you do, and what it refuses to do.
         </p>
 
         <div class="tabs" role="tablist" aria-label="Choose a data structure">
@@ -77,20 +75,22 @@
               <h3>List <span class="tagline">ordered &middot; changeable &middot; grabbed by position</span></h3>
               <p>
                 Reach for a list when you have an <strong>ordered sequence of similar things</strong>
-                and you mostly walk through the whole group or grab items by their position. A list of
-                tickers, a column of prices, the rows you loop over. Add, drop, and reorder freely.
+                and you mostly walk through the whole group or grab items by their position. A watchlist
+                of tickers, a column of prices, the rows you loop over. You can add, drop, and reorder
+                freely.
               </p>
               <div class="btn-row">
-                <button class="btn" data-act="append">Append &lsquo;AMZN&rsquo;</button>
+                <button class="btn" data-act="append">Add &lsquo;GOOG&rsquo;</button>
                 <button class="btn" data-act="sort">Sort A&rarr;Z</button>
-                <button class="btn" data-act="pop">Pop last</button>
+                <button class="btn" data-act="pop">Remove last</button>
                 <button class="btn" data-act="index">Get item [1]</button>
                 <button class="btn btn-ghost" data-act="reset">Reset</button>
               </div>
-              <pre class="code echo" id="list-echo"><code>prices = ['AAPL', 'MSFT', 'NVDA']</code></pre>
+              <pre class="code echo" id="list-echo"><code>watchlist = ['NVDA', 'AAPL', 'MSFT', 'AMZN', 'TSLA']</code></pre>
             </div>
-            <div class="stage" id="list-stage" aria-live="polite">
-              <!-- cells injected -->
+            <div class="stage-col">
+              <div class="stage" id="list-stage" aria-live="polite"></div>
+              <p class="stage-note" id="list-note"></p>
             </div>
           </div>
         </div>
@@ -103,26 +103,16 @@
               <p>
                 Reach for a dictionary the moment your instinct is <em>&ldquo;give me the value for
                 AAPL&rdquo;</em> rather than <em>&ldquo;give me the third item.&rdquo;</em> Ticker to
-                company, ticker to price, a setting to its value. This is also exactly what an API hands
-                back &mdash; <strong>JSON is just a dictionary</strong>.
+                price, ticker to company, a setting to its value. It&rsquo;s also exactly what an API
+                hands back, since <strong>JSON is just a dictionary</strong>.
               </p>
-              <div class="btn-row">
-                <label class="lookup">
-                  Look up
-                  <select id="dict-key">
-                    <option value="AAPL">AAPL</option>
-                    <option value="MSFT">MSFT</option>
-                    <option value="NVDA">NVDA</option>
-                    <option value="TSLA">TSLA &mdash; (not in dict)</option>
-                  </select>
-                </label>
-                <button class="btn" data-act="lookup">Look it up</button>
-                <button class="btn btn-ghost" data-act="reset">Reset</button>
-              </div>
-              <pre class="code echo" id="dict-echo"><code>companies['AAPL']  &rarr;  'Apple Inc.'</code></pre>
+              <p class="prompt-line">Click a ticker to look up its price:</p>
+              <div class="btn-row" id="dict-keys"><!-- key chips injected --></div>
+              <pre class="code echo" id="dict-echo"><code>prices['AAPL']  &rarr;  225</code></pre>
             </div>
-            <div class="stage stage-dict" id="dict-stage" aria-live="polite">
-              <!-- pairs injected -->
+            <div class="stage-col">
+              <div class="stage stage-dict" id="dict-stage" aria-live="polite"></div>
+              <p class="stage-note" id="dict-note"></p>
             </div>
           </div>
         </div>
@@ -134,19 +124,20 @@
               <h3>Tuple <span class="tagline">fixed &middot; protected &middot; travels together</span></h3>
               <p>
                 Reach for a tuple when the values are <strong>fixed and should not change</strong>, or
-                when a few values naturally travel together as one record &mdash; an FX or tax
-                assumption, a coordinate, the multiple outputs a function returns. Python locks a tuple
-                on purpose, which protects it from a stray keystroke.
+                when a few values naturally travel together as one record: an FX or tax assumption, a
+                coordinate, a row that should stay intact. Python locks a tuple on purpose, which
+                protects it from a stray keystroke.
               </p>
               <div class="btn-row">
-                <button class="btn" data-act="mutate">Try: fx[2] = 0.95</button>
+                <button class="btn" data-act="mutate">Try to change it: fx[2] = 0.95</button>
                 <button class="btn" data-act="unpack">Unpack it</button>
                 <button class="btn btn-ghost" data-act="reset">Reset</button>
               </div>
               <pre class="code echo" id="tuple-echo"><code>fx = ('USD', 'EUR', 0.92)</code></pre>
             </div>
-            <div class="stage stage-tuple" id="tuple-stage" aria-live="polite">
-              <!-- cells injected -->
+            <div class="stage-col">
+              <div class="stage stage-tuple" id="tuple-stage" aria-live="polite"></div>
+              <p class="stage-note" id="tuple-note"></p>
             </div>
           </div>
         </div>
@@ -160,23 +151,8 @@
       </div>
     </section>
 
-    <!-- ===================== ASK YOURSELF (rest of the doc) ===================== -->
-    <section id="more" class="section">
-      <div class="wrap">
-        <p class="kicker">Past the containers</p>
-        <h2>Loops, functions, and when to graduate</h2>
-        <p class="section-lede">
-          Same idea, wider lens. Flip each card to see the one question that decides it.
-        </p>
-
-        <div class="flip-grid" id="flipGrid">
-          <!-- flip cards injected -->
-        </div>
-      </div>
-    </section>
-
     <!-- ===================== CHEAT SHEET ===================== -->
-    <section id="cheat" class="section section-alt">
+    <section id="cheat" class="section">
       <div class="wrap">
         <p class="kicker">The whole thing on one screen</p>
         <h2>Decisions at a glance</h2>

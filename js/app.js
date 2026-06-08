@@ -1,6 +1,6 @@
 /* =========================================================
-   Behaviour for the "Which One Do I Reach For?" explainer.
-   Vanilla JS, no dependencies. Sections wired up below.
+   Behaviour for the lists / dictionaries / tuples explainer.
+   Vanilla JS, no dependencies. Reads sample data from data.js.
    ========================================================= */
 (function () {
   "use strict";
@@ -17,10 +17,9 @@
   const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
   // Lightweight Python-ish highlighter. Single left-to-right pass over the
-  // escaped text so we never rescan markup we just inserted (which would let
-  // a later pass match the class="..." of an earlier span).
+  // escaped text so we never rescan markup we just inserted.
   function highlight(code) {
-    const re = /(#[^\n]*)|('[^']*'|"[^"]*")|(\b\d+\.?\d*\b)|(\b(?:for|while|in|if|def|lambda|return|not|import|as|True|False|None)\b)/g;
+    const re = /(#[^\n]*)|('[^']*'|"[^"]*")|(\b\d+\.?\d*\b)|(\b(?:for|while|in|if|def|return|not|import|as|True|False|None)\b)/g;
     return esc(code).replace(re, (m, com, str, num, kw) => {
       if (com) return '<span class="tok-com">' + com + "</span>";
       if (str) return '<span class="tok-str">' + str + "</span>";
@@ -30,6 +29,8 @@
     });
   }
   const setCode = (node, code) => { node.querySelector("code").innerHTML = highlight(code); };
+  const note = (node, text) => { node.innerHTML = text; };
+  const fmtList = (arr) => "[" + arr.map((x) => "'" + x + "'").join(", ") + "]";
 
   /* =========================================================
      1) DECISION ENGINE
@@ -42,7 +43,7 @@
   const link = $("#resultLink");
   let activeChip = null;
 
-  THOUGHTS.forEach((t, i) => {
+  THOUGHTS.forEach((t) => {
     const chip = el("button", "chip", '<span class="quote">&ldquo;' + t.thought + '&rdquo;</span>');
     chip.setAttribute("role", "listitem");
     chip.addEventListener("click", () => selectThought(t, chip));
@@ -57,16 +58,7 @@
     badge.innerHTML = t.tool;
     why.innerHTML = t.why;
     setCode(codeBox, t.code);
-
-    if (t.link) {
-      link.hidden = false;
-      link.classList.remove("hidden");
-      link.setAttribute("href", t.link.anchor);
-      link.dataset.panel = t.link.panel || "";
-      link.textContent = t.link.panel ? "See it in action ↓" : "Explore the cards ↓";
-    } else {
-      link.classList.add("hidden");
-    }
+    link.dataset.panel = t.panel;
 
     card.hidden = false;
     card.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -77,9 +69,7 @@
     if (activeChip) { activeChip.classList.remove("is-active"); activeChip = null; }
   });
 
-  link.addEventListener("click", () => {
-    if (link.dataset.panel) activateTab(link.dataset.panel);
-  });
+  link.addEventListener("click", () => activateTab(link.dataset.panel));
 
   /* =========================================================
      2) TABS
@@ -99,12 +89,13 @@
   $$(".tab").forEach((tab) => tab.addEventListener("click", () => activateTab(tab.dataset.panel)));
 
   /* =========================================================
-     3) LIST PANEL — ordered, changeable, indexed
+     3) LIST PANEL  ->  ordered, changeable, indexed
      ========================================================= */
   const listStage = $("#list-stage");
   const listEcho = $("#list-echo");
-  const LIST_START = ["AAPL", "MSFT", "NVDA"];
-  let listData = LIST_START.slice();
+  const listNote = $("#list-note");
+  const LIST_INTRO = "A list keeps its order. Every item has a position, counting from <b>[0]</b>.";
+  let listData = WATCHLIST.slice();
 
   function renderList(opts) {
     opts = opts || {};
@@ -123,7 +114,7 @@
     }
   }
 
-  // FLIP reorder so sorting visibly slides cells around.
+  // FLIP reorder so sorting visibly slides the cells around.
   function reorderListAnimated(newData) {
     const before = new Map();
     $$(".cell", listStage).forEach((c, i) => before.set(listData[i], c.getBoundingClientRect()));
@@ -138,10 +129,7 @@
       if (!dx && !dy) return;
       c.style.transform = "translate(" + dx + "px," + dy + "px)";
       c.style.transition = "none";
-      requestAnimationFrame(() => {
-        c.style.transition = "";
-        c.style.transform = "";
-      });
+      requestAnimationFrame(() => { c.style.transition = ""; c.style.transform = ""; });
     });
   }
 
@@ -150,16 +138,20 @@
     if (!act) return;
     switch (act) {
       case "append":
-        if (!listData.includes("AMZN")) {
-          listData.push("AMZN");
+        if (!listData.includes(APPEND_TICKER)) {
+          listData.push(APPEND_TICKER);
           renderList({ enterIndex: listData.length - 1 });
-          setCode(listEcho, "prices.append('AMZN')\n# " + fmt(listData));
+          setCode(listEcho, "watchlist.append('" + APPEND_TICKER + "')\n# " + fmtList(listData));
+          note(listNote, "&lsquo;" + APPEND_TICKER + "&rsquo; was added to the end, at index <b>[" +
+            (listData.length - 1) + "]</b>.");
+        } else {
+          note(listNote, "&lsquo;" + APPEND_TICKER + "&rsquo; is already in the list. Reset to start over.");
         }
         break;
       case "sort": {
-        const sorted = listData.slice().sort();
-        reorderListAnimated(sorted);
-        setCode(listEcho, "prices.sort()\n# " + fmt(listData));
+        reorderListAnimated(listData.slice().sort());
+        setCode(listEcho, "watchlist.sort()\n# " + fmtList(listData));
+        note(listNote, "Sorted alphabetically. Items physically move to new positions.");
         break;
       }
       case "pop": {
@@ -169,77 +161,116 @@
           const popped = listData[last];
           if (cell) cell.classList.add("leaving");
           setTimeout(() => { listData.pop(); renderList(); }, 320);
-          setCode(listEcho, "prices.pop()           # '" + popped + "'\n# " + fmt(listData.slice(0, -1)));
+          setCode(listEcho, "watchlist.pop()        # '" + popped + "'\n# " + fmtList(listData.slice(0, -1)));
+          note(listNote, "Removed the last item, &lsquo;" + popped + "&rsquo;. The list is now shorter.");
         }
         break;
       }
       case "index":
         if (listData.length > 1) {
           renderList({ glowIndex: 1 });
-          setCode(listEcho, "prices[1]              # '" + listData[1] + "'");
+          setCode(listEcho, "watchlist[1]           # '" + listData[1] + "'");
+          note(listNote, "<b>watchlist[1]</b> grabs the item in position 1: &lsquo;" + listData[1] +
+            "&rsquo;. You ask by <em>where</em>, not by <em>what</em>.");
         }
         break;
       case "reset":
-        listData = LIST_START.slice();
-        renderList();
-        setCode(listEcho, "prices = " + fmt(listData));
+        resetList();
         break;
     }
   });
-  const fmt = (arr) => "[" + arr.map((x) => "'" + x + "'").join(", ") + "]";
+
+  function resetList() {
+    listData = WATCHLIST.slice();
+    renderList();
+    setCode(listEcho, "watchlist = " + fmtList(listData));
+    note(listNote, LIST_INTRO);
+  }
 
   /* =========================================================
-     4) DICT PANEL — looked up by name
+     4) DICT PANEL  ->  looked up by name
      ========================================================= */
   const dictStage = $("#dict-stage");
   const dictEcho = $("#dict-echo");
-  const DICT = { AAPL: "Apple Inc.", MSFT: "Microsoft Corp.", NVDA: "NVIDIA Corp." };
+  const dictNote = $("#dict-note");
+  const dictKeys = $("#dict-keys");
+  const DICT_INTRO = "A dictionary finds a value by its <b>key</b>, never by position.";
 
-  function renderDict(highlightKey) {
+  function renderDict(highlightKey, missing) {
     dictStage.innerHTML = "";
-    Object.keys(DICT).forEach((k) => {
+    Object.keys(PRICES).forEach((k) => {
       const pair = el("div", "pair",
         '<span class="k">\'' + k + "'</span>" +
         '<span class="arrow">&rarr;</span>' +
-        '<span class="v">\'' + DICT[k] + "'</span>");
+        '<span class="v">' + PRICES[k] + "</span>");
       if (highlightKey) {
         if (k === highlightKey) pair.classList.add("glow");
         else pair.classList.add("dim");
+      } else if (missing) {
+        pair.classList.add("dim");
       }
       dictStage.appendChild(pair);
     });
+    if (missing) {
+      dictStage.appendChild(el("div", "error-banner",
+        "KeyError: '" + MISSING_KEY + "' (no such key)"));
+    }
   }
 
-  $("#panel-dict .btn-row").addEventListener("click", (e) => {
-    const act = e.target.dataset.act;
-    if (!act) return;
-    if (act === "reset") { renderDict(); setCode(dictEcho, "companies = {...}"); return; }
-    if (act === "lookup") {
-      const key = $("#dict-key").value;
-      if (DICT[key]) {
-        renderDict(key);
-        setCode(dictEcho, "companies['" + key + "']  →  '" + DICT[key] + "'");
-      } else {
-        renderDict();
-        const banner = el("div", "error-banner",
-          "KeyError: '" + key + "'  &mdash; no such key. (Use .get() for a safe default.)");
-        dictStage.appendChild(banner);
-        setCode(dictEcho, "companies['" + key + "']\n# KeyError: '" + key + "'");
-      }
+  // Build a clickable chip per key, plus a missing-key chip and reset.
+  function buildDictKeys() {
+    dictKeys.innerHTML = "";
+    Object.keys(PRICES).forEach((k) => {
+      const chip = el("button", "keychip", k);
+      chip.dataset.lookup = k;
+      dictKeys.appendChild(chip);
+    });
+    const miss = el("button", "keychip keychip-missing", MISSING_KEY);
+    miss.dataset.lookup = MISSING_KEY;
+    dictKeys.appendChild(miss);
+    const reset = el("button", "btn btn-ghost", "Reset");
+    reset.dataset.act = "reset";
+    dictKeys.appendChild(reset);
+  }
+
+  dictKeys.addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    if (btn.dataset.act === "reset") { resetDict(); return; }
+    const key = btn.dataset.lookup;
+    if (!key) return;
+    if (PRICES[key] != null) {
+      renderDict(key);
+      setCode(dictEcho, "prices['" + key + "']  →  " + PRICES[key]);
+      note(dictNote, "Looked up by name: <b>prices['" + key + "']</b> returns " + PRICES[key] +
+        ". Position never entered into it.");
+    } else {
+      renderDict(null, true);
+      setCode(dictEcho, "prices['" + key + "']\n# KeyError: '" + key + "'");
+      note(dictNote, "There&rsquo;s no &lsquo;" + key + "&rsquo; key, so Python raises a <b>KeyError</b>. " +
+        "(Use <b>prices.get('" + key + "')</b> for a safe default.)");
     }
   });
 
+  function resetDict() {
+    renderDict();
+    setCode(dictEcho, "prices = {'AAPL': 225, 'MSFT': 420, ...}");
+    note(dictNote, DICT_INTRO);
+  }
+
   /* =========================================================
-     5) TUPLE PANEL — fixed, protected, travels together
+     5) TUPLE PANEL  ->  fixed, protected, travels together
      ========================================================= */
   const tupleStage = $("#tuple-stage");
   const tupleEcho = $("#tuple-echo");
-  const TUPLE = ["USD", "EUR", "0.92"];
+  const tupleNote = $("#tuple-note");
+  const TUPLE_INTRO = "A tuple is locked. You can read the values, but you cannot change them.";
 
   function renderTuple() {
     tupleStage.innerHTML = "";
-    TUPLE.forEach((val, i) => {
-      const cell = el("div", "cell", '<span class="idx">[' + i + "]</span>" + val +
+    FX.forEach((val, i) => {
+      const shown = typeof val === "string" ? val : String(val);
+      const cell = el("div", "cell", '<span class="idx">[' + i + "]</span>" + shown +
         '<span class="lock">&#128274;</span>');
       tupleStage.appendChild(cell);
     });
@@ -248,7 +279,7 @@
   $("#panel-tuple .btn-row").addEventListener("click", (e) => {
     const act = e.target.dataset.act;
     if (!act) return;
-    if (act === "reset") { renderTuple(); setCode(tupleEcho, "fx = ('USD', 'EUR', 0.92)"); return; }
+    if (act === "reset") { resetTuple(); return; }
     if (act === "mutate") {
       renderTuple();
       const target = tupleStage.children[2];
@@ -256,65 +287,52 @@
         target.classList.add("shake");
         setTimeout(() => target.classList.remove("shake"), 500);
       }
-      const banner = el("div", "error-banner",
-        "TypeError: 'tuple' object does not support item assignment");
-      tupleStage.appendChild(banner);
-      setCode(tupleEcho, "fx[2] = 0.95\n# TypeError: tuples are locked on purpose");
+      tupleStage.appendChild(el("div", "error-banner",
+        "TypeError: 'tuple' object does not support item assignment"));
+      setCode(tupleEcho, "fx[2] = 0.95\n# TypeError: a tuple is locked on purpose");
+      note(tupleNote, "Python refuses the change and raises a <b>TypeError</b>. The values are safe " +
+        "from a stray keystroke.");
     }
     if (act === "unpack") {
       renderTuple();
       const names = ["base", "quote", "rate"];
       const box = el("div", "unpacked");
-      TUPLE.forEach((val, i) => {
-        const pill = el("div", "var-pill", "<b>" + names[i] + "</b> = " +
-          (i === 2 ? val : "'" + val + "'"));
+      FX.forEach((val, i) => {
+        const shown = typeof val === "string" ? "'" + val + "'" : val;
+        const pill = el("div", "var-pill", "<b>" + names[i] + "</b> = " + shown);
         pill.style.animationDelay = (i * 0.12) + "s";
         box.appendChild(pill);
       });
       tupleStage.appendChild(box);
       setCode(tupleEcho, "base, quote, rate = fx\n# three values, one clean line");
+      note(tupleNote, "One tuple unpacks into three named values in a single line, because the values " +
+        "travel together as one record.");
     }
   });
 
-  /* =========================================================
-     6) FLIP CARDS
-     ========================================================= */
-  const flipGrid = $("#flipGrid");
-  FLIPS.forEach((f) => {
-    const flip = el("div", "flip");
-    flip.innerHTML =
-      '<div class="flip-inner">' +
-      '<div class="flip-face flip-front">' +
-      "<h3>" + f.front + "</h3>" +
-      '<p class="question">' + f.question + "</p>" +
-      '<p class="hint">Tap to flip &#8635;</p>' +
-      "</div>" +
-      '<div class="flip-face flip-back">' +
-      "<h4>" + f.front + "</h4>" +
-      '<p class="ans">' + f.answer + "</p>" +
-      '<div class="micro">' + esc(f.micro) + "</div>" +
-      "</div></div>";
-    flip.addEventListener("click", () => flip.classList.toggle("flipped"));
-    flipGrid.appendChild(flip);
-  });
+  function resetTuple() {
+    renderTuple();
+    setCode(tupleEcho, "fx = ('USD', 'EUR', 0.92)");
+    note(tupleNote, TUPLE_INTRO);
+  }
 
   /* =========================================================
-     7) GLANCE TABLE (also acts as a jump menu)
+     6) GLANCE TABLE (also a jump menu back to the engine)
      ========================================================= */
   const tbody = $("#glanceTable tbody");
-  THOUGHTS.forEach((t) => {
+  THOUGHTS.forEach((t, i) => {
     const tr = el("tr");
     tr.innerHTML = "<td>&ldquo;" + t.thought + "&rdquo;</td><td>" + t.tool + "</td>";
     tr.addEventListener("click", () => {
-      document.querySelector("#decider").scrollIntoView({ behavior: "smooth" });
-      const chip = grid.children[THOUGHTS.indexOf(t)];
-      if (chip) selectThought(t, chip);
+      $("#decider").scrollIntoView({ behavior: "smooth" });
+      selectThought(t, grid.children[i]);
     });
     tbody.appendChild(tr);
   });
 
   /* ---------- initial paint ---------- */
-  renderList();
-  renderDict();
-  renderTuple();
+  buildDictKeys();
+  resetList();
+  resetDict();
+  resetTuple();
 })();
